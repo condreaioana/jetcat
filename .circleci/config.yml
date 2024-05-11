@@ -1,0 +1,39 @@
+version: 2.1
+
+image: &android_image cimg/android:2023.03.1
+jobs:
+  build:
+    working_directory: ~/code
+    docker:
+      - image: *android_image
+    steps:
+      - checkout
+      - run:
+          name: JAVA_VERSION
+          command: |
+            java -version
+      - run:
+          name: Build APK
+          command: ./gradlew assembleDebug
+      - persist_to_workspace:
+          root: .
+          paths:
+            - app/build/outputs/apk/debug/app-debug.apk
+
+  run_tests:
+    docker:
+      - image: *android_image
+    steps:
+      - checkout
+      - run:
+          name: Run Unit Tests
+          command: ./gradlew testDebugUnitTest
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - run_tests:
+          requires:
+            - build
